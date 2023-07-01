@@ -1,4 +1,5 @@
 import os, requests, json
+from subprocess import call
 from pathlib import Path
 from bs4 import BeautifulSoup
 from pprint import pprint
@@ -21,28 +22,45 @@ class WebScraper:
     
     def get_first_contents(self):
         contents_ = []
-        for i in self.url:
-            response = requests.get(i).text
-            soup = BeautifulSoup(response, 'html.parser')
+        for _, element in enumerate(self.url[:3]):
+            first_response = requests.get(element).text
+            soup = BeautifulSoup(first_response, 'html.parser')
             try:
                 p_contents = soup.find_all('p')
                 img_contents = soup.find_all('img')
                 both_contents = p_contents + img_contents
-            except AttributeError:
-                continue
+            except AttributeError: continue
             for j in both_contents:
                 contents_.append(j.text.split())
-                full_contents = self.add_word_count(''.join([' '.join(i) for i in contents_]))
+        full_contents = self.add_word_count(''.join([' '.join(c) for c in contents_]))
         self.all_contents['first_contents'] = full_contents
-        return self.all_contents
+        return full_contents
+    
+    def get_second_contents(self):
+        contents_ = []
+        for _, element in enumerate(self.url[3:]):
+            second_response = requests.get(element).text
+            soup = BeautifulSoup(second_response, 'html.parser')
+            try:
+                li_contents = soup.find_all('li', class_='toctree-l2')
+                href_contents = soup.find_all('a', class_='reference internal')
+                for li in li_contents:
+                    contents_.append(li.text)
+                for href in href_contents:
+                    contents_.append(href.text)
+            except AttributeError: continue
+        full_contents = self.add_word_count(''.join([''.join(c) for c in contents_]))
+        self.all_contents['second_contents'] = contents_
+        return full_contents
+            
     
     def add_word_count(self, words):
         return f"{words}\n\n\033[1;4;33:47mWord Count:\033[0m {words.__len__()}"
 
 
-link1, link2, link3 = 'https://www.cs.cmu.edu/~bingbin/', 'https://www.gutenberg.org/cache/epub/71080/pg71080-images.html', 'https://www.sciencedirect.com/topics/computer-science/research-paper'
+links = 'https://www.cs.cmu.edu/~bingbin/', 'https://www.gutenberg.org/cache/epub/71080/pg71080-images.html', 'https://www.sciencedirect.com/topics/computer-science/research-paper', 'https://docs.python.org/3/library/'
 
-w = WebScraper(link1, link2, link3).get_first_contents()
+w = WebScraper(*links).get_first_contents()
 
 
 print(w)
