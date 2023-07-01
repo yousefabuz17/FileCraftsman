@@ -64,15 +64,14 @@ class CleanData:
 class RemoveFiles:
     def __init__(self):
         self.files = os.listdir()
-        self.cwd, self.path_name = Path.cwd(), Path.cwd().name
+        self.cwd = Path.cwd()
     
     def fetch_all_files(self):
-        if self.cwd == self.path_name:
-            tag_files = [i for i in self.files if i.startswith('tag_data')]
-        elif self.cwd != self.path_name:
+        if self.cwd.name == 'Projects':
             os.chdir('FileCraftsman')
-            tag_files = [i for i in self.files if i.startswith('tag_data')]
-        return tag_files
+            for file in self.files:
+                if file.startswith('tag_data'):
+                    print(file)
     
     # def remove(self):
     #     if self.cwd == self.path_name:
