@@ -3,6 +3,7 @@ import requests
 import json
 import glob
 import re
+from pandas import pandas as pd
 from pathlib import Path
 from bs4 import BeautifulSoup
 from uuid import uuid4
@@ -52,13 +53,26 @@ class WebScraper:
             with open(new_file_name, 'w') as file:
                 json.dump(data, file, indent=4)
 
-class CleanData:
+class MergeData:
     def __init__(self, directory=None):
         self.directory = directory
     
-    def all_json_files(self):
-        os.chdir('JSON')
-        return glob.glob('*.json')
+    def merge_all(self):
+        all_files = []
+        
+        if Path.cwd().name != self.directory:
+            os.chdir(self.directory)
+            
+            for json_file in glob.glob('*.json'):
+                with open(json_file, 'r') as file1:
+                    data = json.load(file1)
+                all_files.append(data)
+            
+            with open('all_data.json', 'w') as file2:
+                json.dump(all_files, file2, indent=4)
+        
+        return all_files
+
 
 
 def main():
@@ -69,8 +83,9 @@ def main():
         parsed_data = web_link_parser.parse_url()
         if parsed_data:
             web_link_parser.export_tag_data(parsed_data) #Exports data into JSON folder
-            data = CleanData()
-            json_files = data.all_json_files()
+            data = MergeData('JSON')
+            json_full_data = data.merge_all()
+            print(json_full_data)
         else:
             print("Error: No tag information found")
     else:
