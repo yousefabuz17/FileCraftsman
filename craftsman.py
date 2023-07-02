@@ -1,11 +1,7 @@
-import os
-import requests
-import json
-import glob
+import os, glob, json, shutil, requests, logging
+from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
-from uuid import uuid4
-import logging
 
 
 class WebScraper:
@@ -65,12 +61,31 @@ class JSONExporter:
             
             with open('full_data.json', 'w') as file:
                 json.dump(all_files, file, indent=4)
-
+        self.move_json_file()
+        shutil.rmtree(Path.cwd())
         return all_files
+    
+    def move_json_file(self):
+        return shutil.move('full_data.json', Path.cwd().parent)
+    
+    # def remove_json_dir(self):
+    #     return shutil.rmtree(f'FileCraftsman/{self.json_dir}', ignore_errors=True)
+    
 
 
 def main():
-    links = ('https://www.youtube.com/', 'https://www.cs.cmu.edu/~bingbin/', 'https://www.gutenberg.org/cache/epub/71080/pg71080-images.html', 'https://www.sciencedirect.com/topics/computer-science/research-paper', 'https://www.linkedin.com/')
+    links = (
+        'https://www.youtube.com/',
+        'https://www.cs.cmu.edu/~bingbin/',
+        'https://www.gutenberg.org/cache/epub/71080/pg71080-images.html',
+        'https://www.sciencedirect.com/topics/computer-science/research-paper',
+        'https://www.linkedin.com/',
+        'https://www.python.org/',
+        'https://github.com/',
+        'https://www.nytimes.com/',
+        'https://www.wikipedia.org/',
+        'https://www.amazon.com/'
+    )
 
     if links:
         web_scraper = WebScraper(*links)
@@ -80,7 +95,6 @@ def main():
             for data in parsed_data:
                 json_exporter.export_data(data)
             json_full_data = json_exporter.merge_json_files()
-            print(json_full_data)
         else:
             print("Error: No tag information found")
     else:
