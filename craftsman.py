@@ -1,7 +1,9 @@
-import os, glob, json, shutil, requests, logging
+import os, glob, json, shutil, requests, logging, random
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
+from links import LINKS
+from time import sleep
 
 
 class WebScraper:
@@ -54,51 +56,51 @@ class JSONExporter:
     def merge_json_files(self):
         all_files = []
         os.chdir(self.directory)
-        for json_file in glob.glob('*.json'):
-            with open(json_file, 'r') as file:
-                data = json.load(file)
-            all_files.append(data)
-            
-            with open('full_data.json', 'w') as file:
-                json.dump(all_files, file, indent=4)
-        self.move_json_file()
-        shutil.rmtree(Path.cwd())
-        return all_files
+        try:
+            for json_file in glob.glob('*.json'):
+                with open(json_file, 'r') as f1:
+                    data = json.load(f1)
+                all_files.append(data)
+                
+                with open('full_data.json', 'w') as f2:
+                    json.dump(all_files, f2, indent=4)
+            print('Merging JSON files as \'full_data.json\'...')
+            sleep(0.5)
+            self.move_json_file()
+            shutil.rmtree(Path.cwd())
+            return all_files
+        except shutil.Error as e:
+            if os.path.exists('full_data.json'):
+                logging.error(e)
+                print('[DATA FOUND] Re-Merging JSON files as \'full_data.json\'...')
+                print('Contents will be different from previous merge')
+                with open('full_data.json', 'w') as f3:
+                    json.dump(all_files, f3, indent=4)
+            else:
+                print('No \'full_data.json\' found. Creating new file...')
+                with open('full_data.json', 'w') as f4:
+                    json.dump(all_files, f4, indent=4)
+                return all_files
     
     def move_json_file(self):
+        print(f'Moving \'full_data.json\' to parent directory {Path.cwd().parent.name}...')
+        sleep(0.5)
         return shutil.move('full_data.json', Path.cwd().parent)
-    
-    # def remove_json_dir(self):
-    #     return shutil.rmtree(f'FileCraftsman/{self.json_dir}', ignore_errors=True)
-    
 
 
 def main():
-    links = (
-        'https://www.youtube.com/',
-        'https://www.cs.cmu.edu/~bingbin/',
-        'https://www.gutenberg.org/cache/epub/71080/pg71080-images.html',
-        'https://www.sciencedirect.com/topics/computer-science/research-paper',
-        'https://www.linkedin.com/',
-        'https://www.python.org/',
-        'https://github.com/',
-        'https://www.nytimes.com/',
-        'https://www.wikipedia.org/',
-        'https://www.amazon.com/'
-    )
+    links = random.sample(LINKS, 2)
 
-    if links:
-        web_scraper = WebScraper(*links)
-        parsed_data = web_scraper.parse_urls()
-        if parsed_data:
-            json_exporter = JSONExporter('JSON')
-            for data in parsed_data:
-                json_exporter.export_data(data)
-            json_full_data = json_exporter.merge_json_files()
-        else:
-            print("Error: No tag information found")
-    else:
-        print('Error: No links were provided')
+    web_scraper = WebScraper(*links)
+    parsed_data = web_scraper.parse_urls()
+    if parsed_data:
+        json_exporter = JSONExporter('JSON')
+        json_exporter.merge_json_files()  # Merge existing JSON files first
+        json_exporter.create_directory()  # Create a new directory for the updated data
+        for data in parsed_data:
+            json_exporter.export_data(data)
+        json_exporter.merge_json_files()  # Merge new JSON files
+
 
 
 if __name__ == "__main__":
