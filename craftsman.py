@@ -2,8 +2,10 @@ import os, sys, glob, json, shutil, requests, logging, random
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
-from links import LINKS
+import importlib
 from time import sleep
+from links import LINKS
+
 
 
 class WebScraper:
@@ -152,8 +154,16 @@ def main():
             log_path_handler = LogPathHandler(json_exporter)
             log_path_handler.handle_error(type(e))
 
-
+def get_other_files(file: Path, variables: list=None):
+    other_path = '/Users/yousefabuzahrieh/Google Drive/My Drive/Python/Projects/Other'
+    sys.path.append(other_path)
+    module = importlib.import_module(file)
+    globals().update(vars(module))
+    print(globals().update(vars(module)))
+    return f'from {file} import {variables}'
+    
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    get_other_files('links', 'LINKS')
     main()
