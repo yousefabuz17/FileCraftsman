@@ -1,4 +1,4 @@
-import os, glob, json, shutil, requests, logging, random
+import os, sys, glob, json, shutil, requests, logging, random
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -57,26 +57,6 @@ class JSONExporter:
     
     def merge_json_files(self):
         all_files = []
-        
-        def log_path(exception_type):
-            errors = {
-                FileNotFoundError: ['No JSON files found. Creating new file...', 'JSON files merged successfully!'],
-                shutil.Error: ['[DATA FOUND] Re-Merging JSON files as \'full_data.json\'...',
-                            '*Contents will be different from previous merge*', 'JSON files merged successfully!']
-            }
-            if exception_type in errors:
-                logging.error(exception_type)
-                for value in errors[exception_type]:
-                    sleep(0.2)
-                    print(value)
-                if exception_type == FileNotFoundError:
-                    self.create_directory()
-                else:
-                    os.remove(f'{self.json_file_name}.json')
-                with open(f'{self.json_file_name}.json', 'w') as f1:
-                    json.dump(all_files, f1, indent=4)
-            return exception_type
-        
         try:
             os.chdir(self.json_dir)
             for json_file in glob.glob('*.json'):
@@ -94,20 +74,48 @@ class JSONExporter:
             return all_files
 
         except (FileNotFoundError, shutil.Error) as e:
-            return log_path(type(e))
+            raise e
 
-    
     def move_json_file(self):
-        print(f'Moving the finished \'{self.json_file_name}.json\' to it\'s parent directory')
+        print(f'Moving the finished \'{self.json_file_name}.json\' to its parent directory')
         sleep(0.5)
         return shutil.move(f'{self.json_file_name}.json', self.path_name)
+
+
+class LogPathHandler:
+    def __init__(self, json_exporter):
+        self.json_exporter = json_exporter
+    
+    def handle_error(self, exception_type):
+        errors = {
+            FileNotFoundError: ['No JSON files found. Creating new file...', 'JSON files merged successfully!'],
+            shutil.Error: ['[DATA FOUND] Restarting the program...',
+                           '*Contents will be different from the previous merge*', 'JSON files merged successfully!']
+        }
+        if exception_type in errors:
+            logging.error(exception_type)
+            for value in errors[exception_type]:
+                sleep(0.2)
+                print(value)
+            if exception_type == FileNotFoundError:
+                self.json_exporter.create_directory()
+            else:
+                os.remove(f'{self.json_exporter.json_file_name}.json')
+            with open(f'{self.json_exporter.json_file_name}.json', 'w') as f1:
+                json.dump([], f1, indent=4)
+            self.restart_program()
+    
+    def restart_program(self):
+        sleep(0.5)
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
 
 def main():
     links = random.sample(LINKS, 2)
 
     web_scraper = WebScraper(*links)
-    print('Webscraping Activated')
+    print('Web scraping activated')
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter('full_data')
@@ -116,8 +124,11 @@ def main():
         for data in parsed_data:
             print(f'Parsing URLs, each with its own unique ID: {json_exporter.generate_unique_filename()}')
             json_exporter.export_data(data)
-        json_exporter.merge_json_files()  # Merge new JSON files
-
+        try:
+            json_exporter.merge_json_files()  # Merge new JSON files
+        except (FileNotFoundError, shutil.Error) as e:
+            log_path_handler = LogPathHandler(json_exporter)
+            log_path_handler.handle_error(type(e))
 
 
 if __name__ == "__main__":
