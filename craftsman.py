@@ -7,8 +7,14 @@ from time import sleep
 
 
 class WebScraper:
-    def __init__(self, *urls):
+    def __init__(self, *urls, limit=None):
         self.urls = list(urls)
+        self.limit = limit
+        self.limit_urls()
+    
+    def limit_urls(self):
+        if self.limit:
+            self.urls = self.urls[:self.limit]
     
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
@@ -34,7 +40,7 @@ class WebScraper:
 
 
 class JSONExporter:
-    def __init__(self, json_file_name):
+    def __init__(self, json_file_name='full_data'):
         self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
         self.json_file_name = json_file_name
         self.json_dir = 'tag_data'
@@ -46,7 +52,8 @@ class JSONExporter:
     
     def generate_unique_filename(self):
         unique_file_uuid = str(uuid4())[-3:]
-        return f'{self.json_dir}{unique_file_uuid}.json'
+        file_name = f'{self.json_dir}_{unique_file_uuid}.json'
+        return file_name
     
     def export_data(self, data):
         self.create_directory()
@@ -69,17 +76,22 @@ class JSONExporter:
             print(f'Merging all JSON files as \'{self.json_file_name}.json\'')
             self.move_json_file()
             shutil.rmtree(Path.cwd())
-            sleep(0.5)
-            print('JSON files merged successfully!')
+            self.completed()
             return all_files
 
         except (FileNotFoundError, shutil.Error) as e:
             raise e
 
     def move_json_file(self):
-        print(f'Moving the finished \'{self.json_file_name}.json\' to its parent directory')
+        print(f'Moving the finished JSON file contained all parsed link information to its parent directory')
         sleep(0.5)
-        return shutil.move(f'{self.json_file_name}.json', self.path_name)
+        file_name = f'{self.json_file_name}.json'
+        return shutil.move(file_name, self.path_name)
+    
+    def completed(self):
+        full_path = os.path.join(self.path_name, f'{self.json_file_name}.json')
+        print(f'JSON files merged successfully!\n{self.json_file_name}.json is saved in:\n{full_path}\nExiting the program please wait...')
+        sleep(0.5)
 
 
 class LogPathHandler:
@@ -87,9 +99,10 @@ class LogPathHandler:
         self.json_exporter = json_exporter
     
     def handle_error(self, exception_type):
+        print(Path.cwd())
         errors = {
             FileNotFoundError: ['No JSON files found. Creating new file...', 'JSON files merged successfully!'],
-            shutil.Error: ['[DATA FOUND] Restarting the program...',
+            shutil.Error: [f'[DATA FOUND] File already exists in the parent directory. Deleting the old file...',
                            '*Contents will be different from the previous merge*', 'JSON files merged successfully!']
         }
         if exception_type in errors:
@@ -103,23 +116,27 @@ class LogPathHandler:
                 os.remove(f'{self.json_exporter.json_file_name}.json')
             with open(f'{self.json_exporter.json_file_name}.json', 'w') as f1:
                 json.dump([], f1, indent=4)
-            self.restart_program()
+            self.restart_program(f'{self.json_exporter.json_file_name}')
     
-    def restart_program(self):
+    def restart_program(self, file):
+        file_name = f'{file}.json'
+        os.chdir('../FileCraftsman')
+        os.remove(file_name)
+        print('Restarting the program... Please wait')
         sleep(0.5)
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        main()
+        
+
 
 
 def main():
-    links = random.sample(LINKS, 2)
-
-    web_scraper = WebScraper(*links)
+    links = LINKS
+    log_activated = False
+    web_scraper = WebScraper(*links, limit=2)
     print('Web scraping activated')
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
-        json_exporter = JSONExporter('full_data')
-        users_dir_name = json_exporter.json_dir
+        json_exporter = JSONExporter()
         json_exporter.create_directory()  # Create a new directory for the updated data
         for data in parsed_data:
             print(f'Parsing URLs, each with its own unique ID: {json_exporter.generate_unique_filename()}')
