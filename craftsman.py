@@ -34,17 +34,19 @@ class WebScraper:
 
 
 class JSONExporter:
-    def __init__(self, directory):
+    def __init__(self, json_file_name):
         self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
-        self.json_dir = 'JSON'
+        self.json_file_name = json_file_name
+        self.json_dir = 'tag_data'
     
     def create_directory(self):
         if not os.path.exists(self.json_dir):
+            print(f'Creating temporary directory behind the scenes (\'{self.json_dir}\') to store all parsed links as JSON files')
             os.makedirs(self.json_dir)
     
     def generate_unique_filename(self):
         unique_file_uuid = str(uuid4())[-3:]
-        return f'tag_data{unique_file_uuid}.json'
+        return f'{self.json_dir}{unique_file_uuid}.json'
     
     def export_data(self, data):
         self.create_directory()
@@ -58,21 +60,21 @@ class JSONExporter:
         
         def log_path(exception_type):
             errors = {
-                FileNotFoundError: ['No JSON files found. Creating new file...', 'Completed'],
+                FileNotFoundError: ['No JSON files found. Creating new file...', 'JSON files merged successfully!'],
                 shutil.Error: ['[DATA FOUND] Re-Merging JSON files as \'full_data.json\'...',
-                            '*Contents will be different from previous merge*']
+                            '*Contents will be different from previous merge*', 'JSON files merged successfully!']
             }
             if exception_type in errors:
                 logging.error(exception_type)
                 for value in errors[exception_type]:
-                    sleep(0.5)
+                    sleep(0.2)
                     print(value)
                 if exception_type == FileNotFoundError:
                     self.create_directory()
                 else:
-                    os.remove('full_data.json')
-                with open(f'{self.path_name}/full_data.json', 'w') as f3:
-                    json.dump(all_files, f3, indent=4)
+                    os.remove(f'{self.json_file_name}.json')
+                with open(f'{self.json_file_name}.json', 'w') as f1:
+                    json.dump(all_files, f1, indent=4)
             return exception_type
         
         try:
@@ -82,12 +84,13 @@ class JSONExporter:
                     data = json.load(f1)
                 all_files.append(data)
                     
-            with open(f'{self.path_name}/full_data.json', 'w') as f2:
+            with open(f'{self.json_file_name}.json', 'w') as f2:
                 json.dump(all_files, f2, indent=4)
-            print('Merging JSON files as \'full_data.json\'...')
-            sleep(0.5)
+            print(f'Merging all JSON files as \'{self.json_file_name}.json\'')
             self.move_json_file()
             shutil.rmtree(Path.cwd())
+            sleep(0.5)
+            print('JSON files merged successfully!')
             return all_files
 
         except (FileNotFoundError, shutil.Error) as e:
@@ -95,21 +98,23 @@ class JSONExporter:
 
     
     def move_json_file(self):
-        print(f'Moving \'full_data.json\' to parent directory {Path.cwd().name}...')
+        print(f'Moving the finished \'{self.json_file_name}.json\' to it\'s parent directory')
         sleep(0.5)
-        return shutil.move('full_data.json', Path.cwd().parent)
+        return shutil.move(f'{self.json_file_name}.json', self.path_name)
 
 
 def main():
     links = random.sample(LINKS, 2)
 
     web_scraper = WebScraper(*links)
+    print('Webscraping Activated')
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
-        json_exporter = JSONExporter('JSON')
-        # json_exporter.merge_json_files()  # Merge existing JSON files first
+        json_exporter = JSONExporter('full_data')
+        users_dir_name = json_exporter.json_dir
         json_exporter.create_directory()  # Create a new directory for the updated data
         for data in parsed_data:
+            print(f'Parsing URLs, each with its own unique ID: {json_exporter.generate_unique_filename()}')
             json_exporter.export_data(data)
         json_exporter.merge_json_files()  # Merge new JSON files
 
