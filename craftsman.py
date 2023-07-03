@@ -35,7 +35,7 @@ class WebScraper:
 
 class JSONExporter:
     def __init__(self, directory):
-        self.directory = directory
+        self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
         self.json_dir = 'JSON'
     
     def create_directory(self):
@@ -49,41 +49,53 @@ class JSONExporter:
     def export_data(self, data):
         self.create_directory()
         filename = self.generate_unique_filename()
-        file_path = os.path.join(self.directory, filename)
+        file_path = os.path.join(self.json_dir, filename)
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
     
     def merge_json_files(self):
         all_files = []
-        os.chdir(self.directory)
+        
+        def log_path(exception_type):
+            errors = {
+                FileNotFoundError: ['No JSON files found. Creating new file...', 'Completed'],
+                shutil.Error: ['[DATA FOUND] Re-Merging JSON files as \'full_data.json\'...',
+                            '*Contents will be different from previous merge*']
+            }
+            if exception_type in errors:
+                logging.error(exception_type)
+                for value in errors[exception_type]:
+                    sleep(0.5)
+                    print(value)
+                if exception_type == FileNotFoundError:
+                    self.create_directory()
+                else:
+                    os.remove('full_data.json')
+                with open(f'{self.path_name}/full_data.json', 'w') as f3:
+                    json.dump(all_files, f3, indent=4)
+            return exception_type
+        
         try:
+            os.chdir(self.json_dir)
             for json_file in glob.glob('*.json'):
                 with open(json_file, 'r') as f1:
                     data = json.load(f1)
                 all_files.append(data)
-                
-                with open('full_data.json', 'w') as f2:
-                    json.dump(all_files, f2, indent=4)
+                    
+            with open(f'{self.path_name}/full_data.json', 'w') as f2:
+                json.dump(all_files, f2, indent=4)
             print('Merging JSON files as \'full_data.json\'...')
             sleep(0.5)
             self.move_json_file()
             shutil.rmtree(Path.cwd())
             return all_files
-        except shutil.Error as e:
-            if os.path.exists('full_data.json'):
-                logging.error(e)
-                print('[DATA FOUND] Re-Merging JSON files as \'full_data.json\'...')
-                print('Contents will be different from previous merge')
-                with open('full_data.json', 'w') as f3:
-                    json.dump(all_files, f3, indent=4)
-            else:
-                print('No \'full_data.json\' found. Creating new file...')
-                with open('full_data.json', 'w') as f4:
-                    json.dump(all_files, f4, indent=4)
-                return all_files
+
+        except (FileNotFoundError, shutil.Error) as e:
+            return log_path(type(e))
+
     
     def move_json_file(self):
-        print(f'Moving \'full_data.json\' to parent directory {Path.cwd().parent.name}...')
+        print(f'Moving \'full_data.json\' to parent directory {Path.cwd().name}...')
         sleep(0.5)
         return shutil.move('full_data.json', Path.cwd().parent)
 
@@ -95,7 +107,7 @@ def main():
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter('JSON')
-        json_exporter.merge_json_files()  # Merge existing JSON files first
+        # json_exporter.merge_json_files()  # Merge existing JSON files first
         json_exporter.create_directory()  # Create a new directory for the updated data
         for data in parsed_data:
             json_exporter.export_data(data)
