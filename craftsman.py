@@ -8,13 +8,18 @@ from time import sleep
 
 class WebScraper:
     def __init__(self, *urls, limit=None):
+        print('Web scraping activated')
         self.urls = list(urls)
         self.limit = limit
         self.limit_urls()
     
     def limit_urls(self):
-        if self.limit:
-            self.urls = self.urls[:self.limit]
+        if (self.urls is None) and not self.limit:
+            self.urls = random.sample(LINKS, 5)
+        elif self.limit and len(self.urls) > 1:
+            self.urls = random.sample(LINKS, min(self.limit, len(self.urls)))
+        else:
+            self.urls = random.sample(LINKS, 2) #Default limit value set to 2
     
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
@@ -43,7 +48,7 @@ class JSONExporter:
     def __init__(self, json_file_name='full_data'):
         self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
         self.json_file_name = json_file_name
-        self.json_dir = 'tag_data'
+        self.json_dir = 'TempJSONFiles'
     
     def create_directory(self):
         if not os.path.exists(self.json_dir):
@@ -83,14 +88,15 @@ class JSONExporter:
             raise e
 
     def move_json_file(self):
-        print(f'Moving the finished JSON file contained all parsed link information to its parent directory')
+        print(f'Finished JSON file containing all parsed link information will be moved to its parent directory: \n{self.path_name}')
         sleep(0.5)
         file_name = f'{self.json_file_name}.json'
         return shutil.move(file_name, self.path_name)
     
     def completed(self):
         full_path = os.path.join(self.path_name, f'{self.json_file_name}.json')
-        print(f'JSON files merged successfully!\n{self.json_file_name}.json is saved in:\n{full_path}\nExiting the program please wait...')
+        print(f'JSON files merged successfully!\n{self.json_file_name}.json is saved in:\n\
+            {full_path.strip()}\nExiting the program please wait...')
         sleep(0.5)
 
 
@@ -101,9 +107,14 @@ class LogPathHandler:
     def handle_error(self, exception_type):
         print(Path.cwd())
         errors = {
-            FileNotFoundError: ['No JSON files found. Creating new file...', 'JSON files merged successfully!'],
-            shutil.Error: [f'[DATA FOUND] File already exists in the parent directory. Deleting the old file...',
-                           '*Contents will be different from the previous merge*', 'JSON files merged successfully!']
+            FileNotFoundError: ['No JSON files found. Creating new file...'],
+            shutil.Error: [
+                        '[DATA FOUND] File already exists in the parent directory.',
+                        'Restarting the program... Please wait',
+                        'Deleting the old file...',
+                        '*Contents will be different from the previous merge*',
+                        'Restarting the program... Please wait',
+                        'Program successfully restarted!']
         }
         if exception_type in errors:
             logging.error(exception_type)
@@ -114,26 +125,20 @@ class LogPathHandler:
                 self.json_exporter.create_directory()
             else:
                 os.remove(f'{self.json_exporter.json_file_name}.json')
-            with open(f'{self.json_exporter.json_file_name}.json', 'w') as f1:
-                json.dump([], f1, indent=4)
             self.restart_program(f'{self.json_exporter.json_file_name}')
     
     def restart_program(self, file):
         file_name = f'{file}.json'
         os.chdir('../FileCraftsman')
         os.remove(file_name)
-        print('Restarting the program... Please wait')
         sleep(0.5)
         main()
-        
+
 
 
 
 def main():
-    links = LINKS
-    log_activated = False
-    web_scraper = WebScraper(*links, limit=2)
-    print('Web scraping activated')
+    web_scraper = WebScraper()
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter()
@@ -146,6 +151,7 @@ def main():
         except (FileNotFoundError, shutil.Error) as e:
             log_path_handler = LogPathHandler(json_exporter)
             log_path_handler.handle_error(type(e))
+
 
 
 if __name__ == "__main__":
