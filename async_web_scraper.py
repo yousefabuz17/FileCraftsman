@@ -4,6 +4,7 @@ import random
 import logging
 import aiohttp
 import asyncio
+import tracemalloc
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -26,8 +27,8 @@ class AsyncWebScraper:
         all_tags = soup.find_all(True)
         tag_info = {
             'tag_names': list(set(tag.name for tag in all_tags)),
-            'tag_attr': [tag.attrs for tag in all_tags if tag.attrs],
-            'tag_text': [tag.text for tag in all_tags if tag.text],
+            'tag_attr': list(filter(lambda tag_attr: tag_attr,[tag.attrs for tag in all_tags if tag.attrs])),
+            'tag_text': list(filter(lambda tag_text: tag_text,[tag.text for tag in all_tags if tag.text])),
             'tag_contents': [list(filter(lambda content: content, [sub_tag.text for sub_tag in tag.contents if sub_tag.text])) for tag in all_tags]
         }
         return tag_info
@@ -83,51 +84,16 @@ class JSONExporter:
         full_path = self.path_name / f'{self.json_file_name}.json'
         print(f'JSON files merged successfully!\n{self.json_file_name}.json saved at: {full_path}')
 
-class LogPathHandler:
-    def __init__(self, json_exporter):
-        self.json_exporter = json_exporter
-    
-    def handle_error(self, exception_type):
-        errors = {
-            FileNotFoundError: ['No JSON files found. Creating new file...'],
-            shutil.Error: [
-                        '[DATA FOUND] File already exists in the parent directory.',
-                        'Restarting the program... Please wait',
-                        'Deleting the old file...',
-                        '*Contents will be different from the previous merge*',
-                        'File name will be changed to its parents directory name',
-                        'Restarting the program... Please wait',
-                        'Program successfully restarted!']
-        }
-        if exception_type in errors:
-            logging.error(exception_type)
-            for value in errors[exception_type]:
-                print(value)
-            if exception_type == FileNotFoundError:
-                self.json_exporter.create_directory()
-            else:
-                (self.json_exporter.path_name / f'{self.json_exporter.json_file_name}.json').unlink()
-            self.restart_program(f'{self.json_exporter.json_file_name}')
-    
-    def restart_program(self, file):
-        print(Path.cwd())
-        file_name = f'{file}.json'
-        (Path.cwd() / 'FileCraftsman' / file_name).unlink()
-        main()
-
 async def main():
     logging.basicConfig(level=logging.INFO)
-    web_scraper = AsyncWebScraper(limit=2)
+    web_scraper = AsyncWebScraper(limit=7)
     parsed_data = await web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter()
-        unique_filename = json_exporter.generate_unique_filename()
+        json_exporter.generate_unique_filename()
         with ThreadPoolExecutor() as executor:
             list(executor.map(json_exporter.export_data, parsed_data))
-        try:
-            json_exporter.merge_json_files()
-        except (FileNotFoundError, shutil.Error) as e:
-            LogPathHandler(json_exporter).handle_error(type(e))
+        json_exporter.merge_json_files()
 
 if __name__ == "__main__":
     asyncio.run(main())
