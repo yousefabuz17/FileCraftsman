@@ -40,7 +40,6 @@ LINKS = [
     'https://www.cio.com/',
     'https://www.huffpost.com/business',
     'https://www.theguardian.com/technology',
-    'https://kids.discovery.com/',
     'https://www.inc.com/startup',
     'https://www.foxbusiness.com/',
     'https://www.crayola.com/',
