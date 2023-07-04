@@ -1,18 +1,16 @@
-import os
-import sys
-import glob
 import json
 import shutil
-import logging
 import random
+import logging
+import aiohttp
+import asyncio
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
-import requests
-from time import sleep
+from concurrent.futures import ThreadPoolExecutor
 from links import LINKS
 
-class WebScraper:
+class AsyncWebScraper:
     def __init__(self, urls=None, limit=None):
         logging.info('Web scraping activated')
         self.urls = self._limit_urls(urls, limit)
@@ -34,29 +32,26 @@ class WebScraper:
         }
         return tag_info
 
-    def parse_url(self, url):
-        
-        response = requests.get(url).text
-        soup = BeautifulSoup(response, 'html.parser')
-        return self.get_tag_info(soup)
+    async def parse_url(self, url, session):
+        async with session.get(url) as response:
+            text = await response.text()
+            soup = BeautifulSoup(text, 'html.parser')
+            return self.get_tag_info(soup)
 
-    def parse_urls(self):
+    async def parse_urls(self):
         all_tags = []
-        for url in self.urls:
-            tags = self.parse_url(url)
-            all_tags.append(tags)
+        async with aiohttp.ClientSession() as session:
+            tasks = [self.parse_url(url, session) for url in self.urls]
+            all_tags = await asyncio.gather(*tasks)
         return all_tags
 
 
 class JSONExporter:
     def __init__(self, json_file_name='full_data'):
-        self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
+        self.path_name = Path.cwd() / 'FileCraftsman'
         self.json_file_name = json_file_name
-        self.json_dir = 'TempJSONFiles'
-        self.create_directory()
-
-    def create_directory(self):
-        os.makedirs(self.json_dir, exist_ok=True)
+        self.json_dir = Path('TempJSONFiles')
+        self.json_dir.mkdir(exist_ok=True)
         print(f'Created temporary directory: {self.json_dir} to store parsed links as JSON files')
 
     def generate_unique_filename(self):
@@ -66,36 +61,27 @@ class JSONExporter:
 
     def export_data(self, data):
         filename = self.generate_unique_filename()
-        file_path = os.path.join(self.json_dir, filename)
-        with open(file_path, 'w') as file:
+        file_path = self.json_dir / filename
+        with file_path.open('w') as file:
             json.dump(data, file, indent=4)
 
     def merge_json_files(self):
         all_files = []
-        os.chdir(self.json_dir)
-        for json_file in glob.glob('*.json'):
-            with open(json_file, 'r') as f1:
+        for json_file in self.json_dir.glob('*.json'):
+            with json_file.open('r') as f1:
                 data = json.load(f1)
             all_files.append(data)
 
-        with open(f'{self.json_file_name}.json', 'w') as f2:
+        with (self.path_name / f'{self.json_file_name}.json').open('w') as f2:
             json.dump(all_files, f2, indent=4)
         print(f'Merged all JSON files as {self.json_file_name}.json')
-        self.move_json_file()
-        shutil.rmtree(Path.cwd())
+        shutil.rmtree(self.json_dir)
         self.completed()
         return all_files
 
-    def move_json_file(self):
-        print(f'Moving finished JSON file to parent directory: {self.path_name}')
-        sleep(0.5)
-        file_name = f'{self.json_file_name}.json'
-        shutil.move(file_name, self.path_name)
-
     def completed(self):
-        full_path = os.path.join(self.path_name, f'{self.json_file_name}.json')
+        full_path = self.path_name / f'{self.json_file_name}.json'
         print(f'JSON files merged successfully!\n{self.json_file_name}.json saved at: {full_path}')
-        sleep(0.5)
 
 class LogPathHandler:
     def __init__(self, json_exporter):
@@ -116,36 +102,32 @@ class LogPathHandler:
         if exception_type in errors:
             logging.error(exception_type)
             for value in errors[exception_type]:
-                sleep(0.2)
                 print(value)
             if exception_type == FileNotFoundError:
                 self.json_exporter.create_directory()
             else:
-                os.remove(f'{self.json_exporter.json_file_name}.json')
+                (self.json_exporter.path_name / f'{self.json_exporter.json_file_name}.json').unlink()
             self.restart_program(f'{self.json_exporter.json_file_name}')
     
     def restart_program(self, file):
-        print(os.getcwd())
+        print(Path.cwd())
         file_name = f'{file}.json'
-        os.chdir('../FileCraftsman')
-        os.remove(file_name)
-        sleep(0.5)
+        (Path.cwd() / 'FileCraftsman' / file_name).unlink()
         main()
 
-def main():
+async def main():
     logging.basicConfig(level=logging.INFO)
-    web_scraper = WebScraper(limit=2)
-    parsed_data = web_scraper.parse_urls()
+    web_scraper = AsyncWebScraper(limit=2)
+    parsed_data = await web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter()
         unique_filename = json_exporter.generate_unique_filename()
-        for data in parsed_data:
-            print(f'Parsing URLs with unique ID: {unique_filename}')
-            json_exporter.export_data(data)
+        with ThreadPoolExecutor() as executor:
+            list(executor.map(json_exporter.export_data, parsed_data))
         try:
             json_exporter.merge_json_files()
         except (FileNotFoundError, shutil.Error) as e:
             LogPathHandler(json_exporter).handle_error(type(e))
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
