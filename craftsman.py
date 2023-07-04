@@ -1,43 +1,45 @@
-import os, sys, glob, json, shutil, requests, logging, random
+import os
+import sys
+import glob
+import json
+import shutil
+import logging
+import random
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
-import importlib
+import requests
 from time import sleep
 from links import LINKS
 
-
-
 class WebScraper:
-    def __init__(self, *urls, limit=None):
-        print('Web scraping activated')
-        self.urls = list(urls)
-        self.limit = limit
-        self.limit_urls()
-    
-    def limit_urls(self):
-        if (self.urls is None) and not self.limit:
-            self.urls = random.sample(LINKS, 5)
-        elif self.limit and len(self.urls) > 1:
-            self.urls = random.sample(LINKS, min(self.limit, len(self.urls)))
+    def __init__(self, urls=None, limit=None):
+        logging.info('Web scraping activated')
+        self.urls = self._limit_urls(urls, limit)
+
+    def _limit_urls(self, urls, limit):
+        if urls is not None:
+            urls = random.sample(urls, min(limit, len(urls))) if limit else urls
         else:
-            self.urls = random.sample(LINKS, 2) #Default limit value set to 2
-    
+            urls = random.sample(LINKS, 5) if limit is None else random.sample(LINKS, limit)
+        return urls
+
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
         tag_info = {
-            'tag_names': list(set(i.name for i in all_tags)),
-            'tag_attr': [i.attrs for i in all_tags if i.attrs],
-            'tag_text': [i.text for i in all_tags if i.text],
-            'tag_contents': list(filter(lambda k: k,[[j.text for j in tag.contents if j.text] for tag in all_tags]))
+            'tag_names': list(set(tag.name for tag in all_tags)),
+            'tag_attr': [tag.attrs for tag in all_tags if tag.attrs],
+            'tag_text': [tag.text for tag in all_tags if tag.text],
+            'tag_contents': [list(filter(lambda content: content, [sub_tag.text for sub_tag in tag.contents if sub_tag.text])) for tag in all_tags]
         }
         return tag_info
-    
+
     def parse_url(self, url):
+        
         response = requests.get(url).text
         soup = BeautifulSoup(response, 'html.parser')
         return self.get_tag_info(soup)
-    
+
     def parse_urls(self):
         all_tags = []
         for url in self.urls:
@@ -51,63 +53,55 @@ class JSONExporter:
         self.path_name = os.path.join(Path.cwd(), 'FileCraftsman')
         self.json_file_name = json_file_name
         self.json_dir = 'TempJSONFiles'
-    
+        self.create_directory()
+
     def create_directory(self):
-        if not os.path.exists(self.json_dir):
-            print(f'Creating temporary directory behind the scenes (\'{self.json_dir}\') to store all parsed links as JSON files')
-            os.makedirs(self.json_dir)
-    
+        os.makedirs(self.json_dir, exist_ok=True)
+        print(f'Created temporary directory: {self.json_dir} to store parsed links as JSON files')
+
     def generate_unique_filename(self):
         unique_file_uuid = str(uuid4())[-3:]
         file_name = f'{self.json_dir}_{unique_file_uuid}.json'
         return file_name
-    
+
     def export_data(self, data):
-        self.create_directory()
         filename = self.generate_unique_filename()
         file_path = os.path.join(self.json_dir, filename)
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
-    
+
     def merge_json_files(self):
         all_files = []
-        try:
-            os.chdir(self.json_dir)
-            for json_file in glob.glob('*.json'):
-                with open(json_file, 'r') as f1:
-                    data = json.load(f1)
-                all_files.append(data)
-                    
-            with open(f'{self.json_file_name}.json', 'w') as f2:
-                json.dump(all_files, f2, indent=4)
-            print(f'Merging all JSON files as \'{self.json_file_name}.json\'')
-            self.move_json_file()
-            shutil.rmtree(Path.cwd())
-            self.completed()
-            return all_files
+        os.chdir(self.json_dir)
+        for json_file in glob.glob('*.json'):
+            with open(json_file, 'r') as f1:
+                data = json.load(f1)
+            all_files.append(data)
 
-        except (FileNotFoundError, shutil.Error) as e:
-            raise e
+        with open(f'{self.json_file_name}.json', 'w') as f2:
+            json.dump(all_files, f2, indent=4)
+        print(f'Merged all JSON files as {self.json_file_name}.json')
+        self.move_json_file()
+        shutil.rmtree(Path.cwd())
+        self.completed()
+        return all_files
 
     def move_json_file(self):
-        print(f'Finished JSON file containing all parsed link information will be moved to its parent directory: \n{self.path_name}')
+        print(f'Moving finished JSON file to parent directory: {self.path_name}')
         sleep(0.5)
         file_name = f'{self.json_file_name}.json'
-        return shutil.move(file_name, self.path_name)
-    
+        shutil.move(file_name, self.path_name)
+
     def completed(self):
         full_path = os.path.join(self.path_name, f'{self.json_file_name}.json')
-        print(f'JSON files merged successfully!\n{self.json_file_name}.json is saved in:\n\
-            {full_path.strip()}\nExiting the program please wait...')
+        print(f'JSON files merged successfully!\n{self.json_file_name}.json saved at: {full_path}')
         sleep(0.5)
-
 
 class LogPathHandler:
     def __init__(self, json_exporter):
         self.json_exporter = json_exporter
     
     def handle_error(self, exception_type):
-        print(Path.cwd())
         errors = {
             FileNotFoundError: ['No JSON files found. Creating new file...'],
             shutil.Error: [
@@ -115,6 +109,7 @@ class LogPathHandler:
                         'Restarting the program... Please wait',
                         'Deleting the old file...',
                         '*Contents will be different from the previous merge*',
+                        'File name will be changed to its parents directory name',
                         'Restarting the program... Please wait',
                         'Program successfully restarted!']
         }
@@ -130,40 +125,27 @@ class LogPathHandler:
             self.restart_program(f'{self.json_exporter.json_file_name}')
     
     def restart_program(self, file):
+        print(os.getcwd())
         file_name = f'{file}.json'
         os.chdir('../FileCraftsman')
         os.remove(file_name)
         sleep(0.5)
         main()
 
-
-
-
 def main():
-    web_scraper = WebScraper()
+    logging.basicConfig(level=logging.INFO)
+    web_scraper = WebScraper(limit=2)
     parsed_data = web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter()
-        json_exporter.create_directory()  # Create a new directory for the updated data
+        unique_filename = json_exporter.generate_unique_filename()
         for data in parsed_data:
-            print(f'Parsing URLs, each with its own unique ID: {json_exporter.generate_unique_filename()}')
+            print(f'Parsing URLs with unique ID: {unique_filename}')
             json_exporter.export_data(data)
         try:
-            json_exporter.merge_json_files()  # Merge new JSON files
+            json_exporter.merge_json_files()
         except (FileNotFoundError, shutil.Error) as e:
-            log_path_handler = LogPathHandler(json_exporter)
-            log_path_handler.handle_error(type(e))
-
-def get_other_files(file: Path, variables: list=None):
-    other_path = '/Users/yousefabuzahrieh/Google Drive/My Drive/Python/Projects/Other'
-    sys.path.append(other_path)
-    module = importlib.import_module(file)
-    globals().update(vars(module))
-    print(globals().update(vars(module)))
-    return f'from {file} import {variables}'
-    
+            LogPathHandler(json_exporter).handle_error(type(e))
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    get_other_files('links', 'LINKS')
     main()
