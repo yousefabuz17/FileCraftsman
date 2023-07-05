@@ -13,8 +13,9 @@ The File Craftsman is a Python project that showcases advanced web scraping tech
 ## Installation
 Make sure you have Python installed (version 3.6 or later).
 Clone or download the repository to your local machine.
-
+```shell
 git clone https://github.com/yousefabuz17/FileCraftsman.git
+```
 
 ## Usage
 Open a terminal or command prompt and navigate to the project directory.
@@ -24,13 +25,34 @@ python craftsman.py
 python3 craftsman.py
 ```
 
-# Contributing
+## Contributing
 Contributions to File Craftsman project are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request on the project's GitHub repository.
 
 ## Acknowledgements
 The File Craftsman project utilizes various open-source libraries and resources. Special thanks to the developers and contributors of the following libraries:
-- aiohttp: Asynchronous HTTP client/server framework
+```shell
+- aiohttp: Asynchronous HTTP client/server framework 
 - BeautifulSoup: HTML parsing library
 - uuid: Universally unique identifier generation
 - pathlib: Object-oriented filesystem paths
 - concurrent.futures: Asynchronous execution of callables
+```
+
+# In-Progress
+- **Async-Web-Scraper: Completed (Needs Refactoring)**
+    - Finalizing Exception Handling: Ensuring proper handling of exceptions during web scraping.
+    - Implementing Timeout Error Handling: Addressing the issue of program freezes or crashes when a URL is unresponsive or times out.
+    - Documentation and Comments: Adding inline comments to enhance code readability and maintainability. Updating docstrings for classes, methods, and functions to provide clear explanations and usage examples. Reviewing and enhancing the overall project documentation to provide comprehensive and user-friendly instructions.
+
+- **FileCraftsman: Started**
+    - Craftsman Class: Creating the Craftsman class to encapsulate file generation and manipulation functionalities.
+    - Craftsman Methods: Implementing various methods within the Craftsman class to support random file generation, directory creation, and other file operations.
+    - Craftsman Tests: Writing comprehensive tests to ensure the functionality and reliability of the Craftsman class.
+- **Pytests for Assurance: Not Started**
+    - Developing a suite of pytest cases to thoroughly test the File Craftsman project.
+    - Ensuring test coverage for critical components and edge cases.
+    - Running the tests to ensure the overall quality and stability of the project.
+- **Documentation and Comments: Not Started**
+    - Adding inline comments to enhance code readability and maintainability.
+    - Updating docstrings for classes, methods, and functions to provide clear explanations and usage examples.
+    - Reviewing and enhancing the overall project documentation to provide comprehensive and user-friendly instructions.
