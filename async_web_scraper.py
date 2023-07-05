@@ -24,6 +24,9 @@ class AsyncWebScraper:
             urls = random.sample(LINKS, 5) if limit is None else random.sample(LINKS, limit)
         return urls
 
+    def find_json_file(self):
+        pass
+    
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
         tag_info = {
@@ -45,7 +48,8 @@ class AsyncWebScraper:
                 return self.get_tag_info(soup)
         except (aiohttp.ClientError, aiohttp.ClientConnectionError, aiohttp.ClientConnectorSSLError) as e:
             logging.error(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}{e}{CODE['Reset']}")
-            logging.info(f'Continuing with other URLs')
+            print(f'Continuing with other URLs')
+            logging.info(f"{CODE['Font Color']['Green']}{CODE['Text Style']['Bold']}ALL URLs SUCCESSFULLY PARSED{CODE['Reset']}")
             return None
 
     async def parse_urls(self):
@@ -98,7 +102,7 @@ class JSONExporter:
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}WEB SCRAPING DE-ACTIVATED{CODE['Reset']}")
 
 
-async def main():
+async def scraper_main():
     logging.basicConfig(level=logging.INFO)
     web_scraper = AsyncWebScraper(limit=5)
     parsed_data = await web_scraper.parse_urls()
@@ -111,4 +115,4 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(scraper_main())
