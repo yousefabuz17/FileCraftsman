@@ -26,9 +26,11 @@ class AsyncWebScraper:
         return urls
 
     def find_json_file(self):
-        if Path.exists(Path.cwd() / 'FileCraftsman' / 'full_data.json'):
+        json_file_path = Path.cwd() / 'FileCraftsman' / 'full_data.json'
+        if json_file_path.exists():
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}JSON FILE ALREADY EXISTS{CODE['Reset']}")
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}Contents will be altered!!!{CODE['Reset']}")
+            json_file_path.unlink()
     
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
@@ -107,7 +109,7 @@ class JSONExporter:
 
 async def scraper_main():
     logging.basicConfig(level=logging.INFO)
-    web_scraper = AsyncWebScraper(limit=5)
+    web_scraper = AsyncWebScraper(limit=10)
     parsed_data = await web_scraper.parse_urls()
     if parsed_data:
         json_exporter = JSONExporter()
@@ -118,4 +120,11 @@ async def scraper_main():
 
 
 if __name__ == '__main__':
-    asyncio.run(scraper_main())
+    try:
+        asyncio.run(scraper_main())
+    except KeyboardInterrupt:
+        print(f'\n{CODE["Font Color"]["Red"]}Keyboard Interrupt: Exiting the program{CODE["Reset"]}')
+        logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}WEB SCRAPING DE-ACTIVATED\nFILE-TERMINATED{CODE['Reset']}")
+        json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
+        if json_data_file.exists():
+            json_data_file.unlink()
