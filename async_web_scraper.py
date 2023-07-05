@@ -16,6 +16,7 @@ class AsyncWebScraper:
     def __init__(self, urls=None, limit=None):
         logging.info(f"{CODE['Font Color']['Green']}{CODE['Text Style']['Bold']}WEB SCRAPING ACTIVATED{CODE['Reset']}")
         self.urls = self._limit_urls(urls, limit)
+        self.find_json_file()
 
     def _limit_urls(self, urls, limit):
         if urls is not None:
@@ -25,7 +26,9 @@ class AsyncWebScraper:
         return urls
 
     def find_json_file(self):
-        pass
+        if Path.exists(Path.cwd() / 'FileCraftsman' / 'full_data.json'):
+            logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}JSON FILE ALREADY EXISTS{CODE['Reset']}")
+            logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}Contents will be altered!!!{CODE['Reset']}")
     
     def get_tag_info(self, soup):
         all_tags = soup.find_all(True)
