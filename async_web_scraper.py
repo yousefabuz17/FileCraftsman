@@ -76,7 +76,7 @@ class JSONExporter:
         self.json_file_name = json_file_name
         self.json_dir = Path('TempJSONFiles')
         self.json_dir.mkdir(exist_ok=True)
-        console.print(f"Temporary directory created [bold blue]'{self.json_dir}'[/bold blue]: to store each parsed link as JSON files")
+        console.print(f"Temporary directory created [bold blue]'{self.json_dir}'[/bold blue]: to store each parsed link.")
 
     def generate_unique_filename(self):
         unique_file_uuid = str(uuid4())[-3:]
@@ -98,8 +98,10 @@ class JSONExporter:
 
         with (self.path_name / f'{self.json_file_name}.json').open('w', encoding='utf-8') as f2:
             json.dump(all_files, f2, indent=4)
-        console.print(f"{all_files.__len__()} JSON files created")
-        console.print(f"Merging all JSON files. File will be named: [bold cyan]'{self.json_file_name}.json'[/bold cyan]")
+        console.print(
+                        f"{all_files.__len__()} JSON files created",
+                        f"Merging all JSON files. File will be named: [bold cyan]'{self.json_file_name}.json'[/bold cyan]"
+                        , sep='\n')
         shutil.rmtree(self.json_dir)
         sleep(1)
         self.completed()
@@ -109,17 +111,22 @@ class JSONExporter:
     
     def completed(self):
         full_path = self.path_name / f'{self.json_file_name}.json'
-        console.print(f'JSON files merged successfully!\n[green]{self.json_file_name}.json saved at: {full_path}[/green]')
-        console.print(f'JSON Line/Byte Size: [bold blue]({self.get_line_count(self.json_file_name):,}, {full_path.stat().st_size:,} bytes)[/bold blue]')
-        console.print(f"[u i]Note: More links parsed = More data = Larger file size & longer parsing time[/u i]")
-        console.print(f'[red]If any problems, please submit an issue on GitHub at:[/red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]\n')
-        console.print('[bold red]\tWEB SCRAPING DE-ACTIVATED[/bold red]\n')
+        json_byte_size, json_gb_size = full_path.stat().st_size, full_path.stat().st_size*1e-9
+        console.print(
+                        f"JSON files merged successfully!",
+                        f"[bold green][SUCCESS][/bold green] {self.json_file_name}.json saved at:",
+                        f"[yellow]{full_path}[/yellow]",
+                        f"JSON Line/Byte Size: [bold blue]({self.get_line_count(self.json_file_name):,} ~ {json_byte_size:,} bytes ~ {json_gb_size:.2}GB)[/bold blue]",
+                        "[u i]Note: More links parsed = More data = Larger file size & longer parsing time[/u i]",
+                        "[bold red]\tWEB SCRAPING DE-ACTIVATED[/bold red]",
+                        "[red]If any problems, please submit an issue on GitHub at:[/red]\n[link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/link]\n"
+                        , sep='\n')
 
 
 async def scraper_main():
     try:
         logging.basicConfig(level=logging.INFO)
-        web_scraper = AsyncWebScraper(limit=100)
+        web_scraper = AsyncWebScraper(limit=10)
         parsed_data = await web_scraper.parse_urls()
         if parsed_data:
             json_exporter = JSONExporter()
