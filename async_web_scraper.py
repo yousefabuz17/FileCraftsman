@@ -134,6 +134,16 @@ async def scraper_main():
             with ThreadPoolExecutor() as executor:
                 list(executor.map(json_exporter.export_data, parsed_data))
             json_exporter.merge_json_files()
+    except json.decoder.JSONDecodeError:
+        console.print(f'[red]JSONDecodeError: URLs failed. Re-run program.[/red]')
+        console.print(f'[bold red]If problem continues, please submit an issue on GitHub at:[/bold red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]')
+
+#Add timeout exception
+
+if __name__ == '__main__':
+    try:
+        console = Console()
+        asyncio.run(scraper_main())
     except KeyboardInterrupt:
         console.print(f'\n[bold red]Keyboard Interrupt: Exiting the program[/bold red]')
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
@@ -142,12 +152,3 @@ async def scraper_main():
         if json_data_file.exists() and json_temp_dir.exists():
             json_data_file.unlink()
             shutil.rmtree(json_temp_dir)
-    except json.decoder.JSONDecodeError:
-        console.print(f'[red]JSONDecodeError: URLs failed. Re-run program.[/red]')
-        console.print(f'[bold red]If problem continues, please submit an issue on GitHub at:[/bold red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]')
-
-#Add timeout exception
-
-if __name__ == '__main__':
-    console = Console()
-    asyncio.run(scraper_main())
