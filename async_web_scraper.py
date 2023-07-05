@@ -4,9 +4,11 @@ import logging
 import aiohttp
 import asyncio
 from uuid import uuid4
-from random import sample, randint
+from time import sleep
 from pathlib import Path
 from bs4 import BeautifulSoup
+from rich.console import Console
+from random import sample, randint
 from concurrent.futures import ThreadPoolExecutor
 from links import LINKS
 from ansi_colors import CODE
@@ -14,7 +16,7 @@ from ansi_colors import CODE
 
 class AsyncWebScraper:
     def __init__(self, urls=None, limit=None):
-        logging.info(f"{CODE['Font Color']['Green']}{CODE['Text Style']['Bold']}WEB SCRAPING ACTIVATED{CODE['Reset']}")
+        console.print('[bold green]\n\tWEB SCRAPING ACTIVATED[/bold green]')
         self.urls = self._limit_urls(urls, limit)
         self.find_json_file()
 
@@ -74,7 +76,7 @@ class JSONExporter:
         self.json_file_name = json_file_name
         self.json_dir = Path('TempJSONFiles')
         self.json_dir.mkdir(exist_ok=True)
-        print(f'Temporary directory created "{CODE["Font Color"]["Blue"]}{CODE["Text Style"]["Bold"]}{self.json_dir}{CODE["Reset"]}": to store parsed links as JSON files')
+        console.print(f"Temporary directory created [bold blue]'{self.json_dir}'[/bold blue]: to store each parsed link as JSON files")
 
     def generate_unique_filename(self):
         unique_file_uuid = str(uuid4())[-3:]
@@ -96,8 +98,10 @@ class JSONExporter:
 
         with (self.path_name / f'{self.json_file_name}.json').open('w', encoding='utf-8') as f2:
             json.dump(all_files, f2, indent=4)
-        print(f'Merged all JSON files as {self.json_file_name}.json')
+        console.print(f"{all_files.__len__()} JSON files created")
+        console.print(f"Merging all JSON files. File will be named: [bold cyan]'{self.json_file_name}.json'[/bold cyan]")
         shutil.rmtree(self.json_dir)
+        sleep(1)
         self.completed()
         return all_files
     
@@ -105,15 +109,17 @@ class JSONExporter:
     
     def completed(self):
         full_path = self.path_name / f'{self.json_file_name}.json'
-        print(f'{CODE["Font Color"]["Green"]}JSON files merged successfully!\n{self.json_file_name}.json saved at: {full_path}{CODE["Reset"]}')
-        print(f'{CODE["Font Color"]["Blue"]}{CODE["Text Style"]["Bold"]}# of lines in JSON file: ({self.get_line_count(self.json_file_name):,}){CODE["Reset"]}')
-        logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}WEB SCRAPING DE-ACTIVATED{CODE['Reset']}")
+        console.print(f'JSON files merged successfully!\n[green]{self.json_file_name}.json saved at: {full_path}[/green]')
+        console.print(f'JSON Line/Byte Size: [bold blue]({self.get_line_count(self.json_file_name):,}, {full_path.stat().st_size:,} bytes)[/bold blue]')
+        console.print(f"[u i]Note: More links parsed = More data = Larger file size & longer parsing time[/u i]")
+        console.print(f'[red]If any problems, please submit an issue on GitHub at:[/red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]\n')
+        console.print('[bold red]\tWEB SCRAPING DE-ACTIVATED[/bold red]\n')
 
 
 async def scraper_main():
     try:
         logging.basicConfig(level=logging.INFO)
-        web_scraper = AsyncWebScraper(limit=30)
+        web_scraper = AsyncWebScraper(limit=100)
         parsed_data = await web_scraper.parse_urls()
         if parsed_data:
             json_exporter = JSONExporter()
@@ -122,7 +128,7 @@ async def scraper_main():
                 list(executor.map(json_exporter.export_data, parsed_data))
             json_exporter.merge_json_files()
     except KeyboardInterrupt:
-        print(f'\n{CODE["Font Color"]["Red"]}Keyboard Interrupt: Exiting the program{CODE["Reset"]}')
+        console.print(f'\n[bold red]Keyboard Interrupt: Exiting the program[/bold red]')
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
         json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
         json_temp_dir = (Path.cwd() / 'TempJSONFiles')
@@ -130,11 +136,11 @@ async def scraper_main():
             json_data_file.unlink()
             shutil.rmtree(json_temp_dir)
     except json.decoder.JSONDecodeError:
-        print(f'{CODE["Font Color"]["Red"]}JSONDecodeError: URLs failed. Re-run program.{CODE["Reset"]}')
-        print(f'{CODE["Font Color"]["Red"]}{CODE["Text Style"]["Bold"]}If problem continues, please submit an issue on GitHub at:{CODE["Reset"]}\n{CODE["Font Color"]["Blue"]}{CODE["Text Style"]["Bold"]}https://github.com/yousefabuz17/FileCraftsman/issues/new{CODE["Reset"]}')
+        console.print(f'[red]JSONDecodeError: URLs failed. Re-run program.[/red]')
+        console.print(f'[bold red]If problem continues, please submit an issue on GitHub at:[/bold red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]')
 
 #Add timeout exception
 
 if __name__ == '__main__':
+    console = Console()
     asyncio.run(scraper_main())
-    # logging.error(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}TimeoutError: Please check your internet connection{CODE['Reset']}")
