@@ -1,3 +1,4 @@
+import os
 import json
 import shutil
 import random
@@ -118,6 +119,13 @@ async def scraper_main():
             list(executor.map(json_exporter.export_data, parsed_data))
         json_exporter.merge_json_files()
 
+def remove_garbage():
+    json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
+    json_temp_dir = (Path.cwd() / 'TempJSONFiles')
+    if json_data_file.exists() and json_temp_dir.exists():
+        json_data_file.unlink()
+        shutil.rmtree(json_temp_dir)
+
 #Add timeout exception
 
 if __name__ == '__main__':
@@ -125,7 +133,12 @@ if __name__ == '__main__':
         asyncio.run(scraper_main())
     except KeyboardInterrupt:
         print(f'\n{CODE["Font Color"]["Red"]}Keyboard Interrupt: Exiting the program{CODE["Reset"]}')
-        logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}WEB SCRAPING DE-ACTIVATED\nFILE-TERMINATED{CODE['Reset']}")
+        logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
         json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
-        if json_data_file.exists():
+        json_temp_dir = (Path.cwd() / 'TempJSONFiles')
+        if json_data_file.exists() and json_temp_dir.exists():
             json_data_file.unlink()
+            shutil.rmtree(json_temp_dir)
+    except json.decoder.JSONDecodeError as e:
+        print(f'{CODE["Font Color"]["Red"]}JSONDecodeError: URLs failed. Re-run program.{CODE["Reset"]}')
+        print(f'{CODE["Font Color"]["Red"]}{CODE["Text Style"]["Bold"]}If problem continues, please submit an issue on GitHub at:{CODE["Reset"]}\n{CODE["Font Color"]["Green"]}https://github.com/yousefabuz17/FileCraftsman/issues/new{CODE["Reset"]}')
