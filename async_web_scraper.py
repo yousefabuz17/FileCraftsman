@@ -4,7 +4,6 @@ import random
 import logging
 import aiohttp
 import asyncio
-import tracemalloc
 from uuid import uuid4
 from pathlib import Path
 from bs4 import BeautifulSoup
