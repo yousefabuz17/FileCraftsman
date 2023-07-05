@@ -141,4 +141,4 @@ if __name__ == '__main__':
             shutil.rmtree(json_temp_dir)
     except json.decoder.JSONDecodeError as e:
         print(f'{CODE["Font Color"]["Red"]}JSONDecodeError: URLs failed. Re-run program.{CODE["Reset"]}')
-        print(f'{CODE["Font Color"]["Red"]}{CODE["Text Style"]["Bold"]}If problem continues, please submit an issue on GitHub at:{CODE["Reset"]}\n{CODE["Font Color"]["Green"]}https://github.com/yousefabuz17/FileCraftsman/issues/new{CODE["Reset"]}')
+        print(f'{CODE["Font Color"]["Red"]}{CODE["Text Style"]["Bold"]}If problem continues, please submit an issue on GitHub at:{CODE["Reset"]}\n{CODE["Font Color"]["Blue"]}{CODE["Text Style"]["Bold"]}https://github.com/yousefabuz17/FileCraftsman/issues/new{CODE["Reset"]}')
