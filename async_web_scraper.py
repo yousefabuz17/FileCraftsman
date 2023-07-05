@@ -108,28 +108,16 @@ class JSONExporter:
 
 
 async def scraper_main():
-    logging.basicConfig(level=logging.INFO)
-    web_scraper = AsyncWebScraper(limit=10)
-    parsed_data = await web_scraper.parse_urls()
-    if parsed_data:
-        json_exporter = JSONExporter()
-        json_exporter.generate_unique_filename()
-        with ThreadPoolExecutor() as executor:
-            list(executor.map(json_exporter.export_data, parsed_data))
-        json_exporter.merge_json_files()
-
-def remove_garbage():
-    json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
-    json_temp_dir = (Path.cwd() / 'TempJSONFiles')
-    if json_data_file.exists() and json_temp_dir.exists():
-        json_data_file.unlink()
-        shutil.rmtree(json_temp_dir)
-
-#Add timeout exception
-
-if __name__ == '__main__':
     try:
-        asyncio.run(scraper_main())
+        logging.basicConfig(level=logging.INFO)
+        web_scraper = AsyncWebScraper(limit=10)
+        parsed_data = await web_scraper.parse_urls()
+        if parsed_data:
+            json_exporter = JSONExporter()
+            json_exporter.generate_unique_filename()
+            with ThreadPoolExecutor() as executor:
+                list(executor.map(json_exporter.export_data, parsed_data))
+            json_exporter.merge_json_files()
     except KeyboardInterrupt:
         print(f'\n{CODE["Font Color"]["Red"]}Keyboard Interrupt: Exiting the program{CODE["Reset"]}')
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
@@ -141,3 +129,8 @@ if __name__ == '__main__':
     except json.decoder.JSONDecodeError as e:
         print(f'{CODE["Font Color"]["Red"]}JSONDecodeError: URLs failed. Re-run program.{CODE["Reset"]}')
         print(f'{CODE["Font Color"]["Red"]}{CODE["Text Style"]["Bold"]}If problem continues, please submit an issue on GitHub at:{CODE["Reset"]}\n{CODE["Font Color"]["Blue"]}{CODE["Text Style"]["Bold"]}https://github.com/yousefabuz17/FileCraftsman/issues/new{CODE["Reset"]}')
+
+#Add timeout exception
+
+if __name__ == '__main__':
+    asyncio.run(scraper_main())
