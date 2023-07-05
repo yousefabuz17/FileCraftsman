@@ -118,6 +118,7 @@ async def scraper_main():
             list(executor.map(json_exporter.export_data, parsed_data))
         json_exporter.merge_json_files()
 
+#Add timeout exception
 
 if __name__ == '__main__':
     try:
