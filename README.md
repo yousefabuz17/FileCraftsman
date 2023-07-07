@@ -24,7 +24,8 @@ Run the following command to start the program:
 python craftsman.py
 python3 craftsman.py
 ```
-
+## Pictures
+ ![Screen Shot 2023-07-07 at 1 55 32 AM](https://github.com/yousefabuz17/FileCraftsman/assets/68834704/8fa449e5-9fad-4191-a78a-9957a29f5693)
 ## Contributing
 Contributions to File Craftsman project are welcome! If you have any ideas, suggestions, or bug reports, please open an issue or submit a pull request on the project's GitHub repository.
 
