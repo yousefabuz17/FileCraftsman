@@ -26,10 +26,12 @@ class Craftsman:
             os.makedirs(sub_folder_path, exist_ok=True)
             file_path = sub_folder_path / f'random_file{idx}.txt'
             with open(file_path, 'w') as file:
-                file.write(f"{json_item['tag_names']}\n")
-                file.write(f"{json_item['tag_text']}\n")
-                file.write(f"{json_item['random_bytes']}\n")
-                file.write(f"{json_item['tag_contents']}\n")
+                file.write(
+                        f"{json_item['tag_names']}\n",
+                        f"{json_item['tag_text']}\n",
+                        f"{json_item['tag_text']}\n",
+                        f"{json_item['random_bytes']}\n",
+                        f"{json_item['tag_contents']}\n")
 
     def get_data(self):
         json_file = self.current_dir / 'full_data.json'
