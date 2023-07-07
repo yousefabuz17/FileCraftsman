@@ -6,17 +6,18 @@ from async_web_scraper import *
 from concurrent.futures import ThreadPoolExecutor
 
 class Craftsman:
-    def __init__(self):
+    def __init__(self, num_dir):
         console.print('[bold green]\n\tCRAFTSMAN ACTIVATED[/bold green]')
+        self.num_dir = num_dir
         self.current_dir = Path.cwd() / 'FileCraftsman' if Path.cwd().name=='Projects' else Path.cwd()
         self.data = self.get_data()
         self.all_tags = ['tag_names', 'tag_text', 'tag_attr', 'tag_contents', 'random_bytes']
 
     def create_dirs(self):
         os.makedirs(self.current_dir / 'RandomFolder', exist_ok=True)
-        for i in range(3):
+        for i in range(self.num_dir+1):
             os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}', exist_ok=True)
-            for j in range(3):
+            for j in range(self.num_dir+1):
                 os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}' / f'RandomSubSubFolder{j}', exist_ok=True)
 
     def write_to_file(self):
@@ -43,7 +44,8 @@ class Craftsman:
                     sep='\n')
 
 async def main():
-    data = Craftsman()
+    num_dirs = int(input('Enter the number of primary directories to create: '))
+    data = Craftsman(num_dirs)
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as executor:
         await loop.run_in_executor(executor, data.create_dirs)
