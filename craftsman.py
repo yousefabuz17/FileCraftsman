@@ -8,15 +8,15 @@ from concurrent.futures import ThreadPoolExecutor
 class Craftsman:
     def __init__(self):
         console.print('[bold green]\n\tCRAFTSMAN ACTIVATED[/bold green]')
-        self.current_dir = Path.cwd() / 'FileCraftsman'
+        self.current_dir = Path.cwd() / 'FileCraftsman' if Path.cwd().name=='Projects' else Path.cwd()
         self.data = self.get_data()
 
     def create_dirs(self):
         os.makedirs(self.current_dir / 'RandomFolder', exist_ok=True)
         for i in range(3):
-            os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}')
+            os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}', exist_ok=True)
             for j in range(3):
-                os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}' / f'RandomSubSubFolder{j}')
+                os.makedirs(self.current_dir / 'RandomFolder' / f'RandomSubFolder{i}' / f'RandomSubSubFolder{j}', exist_ok=True)
 
     def write_to_file(self):
         json_data = self.get_data()
@@ -32,7 +32,7 @@ class Craftsman:
                 file.write(f"{json_item['tag_contents']}\n")
 
     def get_data(self):
-        json_file = (self.current_dir / 'full_data.json') if self.current_dir.name == 'Projects' else self.current_dir / 'full_data.json'
+        json_file = self.current_dir / 'full_data.json'
         with open(json_file, 'r') as file:
             data = json.load(file)
         return data
@@ -55,7 +55,7 @@ async def main():
     data.complete()
 
 if __name__ == '__main__':
-    json_file_path = (Path.cwd() / 'FileCraftsman' / 'full_data.json') if Path.cwd().name == 'Projects' else Path.cwd() / 'full_data.json'
+    json_file_path = Path.cwd() / 'full_data.json'
     if not json_file_path.exists():
         asyncio.run(scraper_main())  # Run the async web scraper first to obtain the JSON file if it doesn't exist
         asyncio.run(main())
