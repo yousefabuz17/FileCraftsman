@@ -36,7 +36,7 @@ class AsyncWebScraper:
 
 
     def find_json_file(self):
-        json_file_path = (Path.cwd() / 'FileCraftsman' / 'full_data.json') if Path.cwd()=='Projects' else Path.cwd() / 'full_data.json'
+        json_file_path = (Path.cwd() / 'FileCraftsman' / 'full_data.json') if Path.cwd().name=='Projects' else Path.cwd() / 'full_data.json'
         if json_file_path.exists():
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}JSON FILE ALREADY EXISTS{CODE['Reset']}")
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}Contents will be altered!!!{CODE['Reset']}")
@@ -80,7 +80,7 @@ class AsyncWebScraper:
 
 class JSONExporter:
     def __init__(self, json_file_name='full_data'):
-        self.path_name = (Path.cwd() / 'FileCraftsman') if Path.cwd()=='Projects' else Path.cwd()
+        self.path_name = (Path.cwd() / 'FileCraftsman') if Path.cwd().name=='Projects' else Path.cwd()
         self.json_file_name = json_file_name
         self.json_dir = Path('TempJSONFiles')
         self.json_dir.mkdir(exist_ok=True)
@@ -154,8 +154,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         console.print(f'\n[bold red]Keyboard Interrupt: Exiting the program[/bold red]')
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
-        json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json') or (Path.cwd() / 'full_data.json')
-        json_temp_dir = (Path.cwd() / 'TempJSONFiles')
-        if json_data_file.exists() and json_temp_dir.exists():
+        json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json') if Path.cwd().name=='Projects' else Path.cwd() / 'full_data.json'
+        json_temp_dir = (Path.cwd() / 'FileCraftsman' / 'TempJSONFiles') if Path.cwd().name=='Projects' else Path.cwd() / 'TempJSONFiles'
+        if json_data_file.exists() or json_temp_dir.exists():
             json_data_file.unlink()
             shutil.rmtree(json_temp_dir)
