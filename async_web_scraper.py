@@ -1,3 +1,4 @@
+import os
 import json
 import shutil
 import logging
@@ -13,22 +14,29 @@ from concurrent.futures import ThreadPoolExecutor
 from links import LINKS
 from ansi_colors import CODE
 
+console = Console()
+
 
 class AsyncWebScraper:
-    def __init__(self, urls=None, limit=None):
-        console.print('[bold green]\n\tWEB SCRAPING ACTIVATED[/bold green]')
+    def __init__(self, urls: list=None, limit=None):
         self.urls = self._limit_urls(urls, limit)
+        console.print(
+                    '[bold green]\n\tWEB SCRAPING ACTIVATED[/bold green]',
+                    f"Parsing {len(self.urls)} URL{'s' if len(self.urls) > 1 else ''}", sep='\n')
         self.find_json_file()
 
     def _limit_urls(self, urls, limit):
         if urls is not None:
-            urls = sample(urls, min(limit, len(urls))) if limit else urls
+            if (limit is not None) and (limit <= len(urls)):
+                urls = sample(urls, k=limit)
         else:
-            urls = sample(LINKS, randint(1, LINKS.__len__()//4)) if limit is None else sample(LINKS, limit)
+            limit = limit or randint(1, len(LINKS) // 4)
+            urls = sample(LINKS, k=limit)
         return urls
 
+
     def find_json_file(self):
-        json_file_path = Path.cwd() / 'FileCraftsman' / 'full_data.json'
+        json_file_path = (Path.cwd() / 'FileCraftsman' / 'full_data.json') if Path.cwd()=='Projects' else Path.cwd() / 'full_data.json'
         if json_file_path.exists():
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}JSON FILE ALREADY EXISTS{CODE['Reset']}")
             logging.info(f"{CODE['Font Color']['Blue']}{CODE['Text Style']['Bold']}Contents will be altered!!!{CODE['Reset']}")
@@ -72,7 +80,7 @@ class AsyncWebScraper:
 
 class JSONExporter:
     def __init__(self, json_file_name='full_data'):
-        self.path_name = Path.cwd() / 'FileCraftsman'
+        self.path_name = (Path.cwd() / 'FileCraftsman') if Path.cwd()=='Projects' else Path.cwd()
         self.json_file_name = json_file_name
         self.json_dir = Path('TempJSONFiles')
         self.json_dir.mkdir(exist_ok=True)
@@ -86,7 +94,7 @@ class JSONExporter:
     def export_data(self, data):
         filename = self.generate_unique_filename()
         file_path = self.json_dir / filename
-        with file_path.open('w') as file:
+        with file_path.open('w', encoding='utf-8') as file:
             json.dump(data, file, indent=4)
 
     def merge_json_files(self):
@@ -126,7 +134,7 @@ class JSONExporter:
 async def scraper_main():
     try:
         logging.basicConfig(level=logging.INFO)
-        web_scraper = AsyncWebScraper(limit=10)
+        web_scraper = AsyncWebScraper(limit=5)
         parsed_data = await web_scraper.parse_urls()
         if parsed_data:
             json_exporter = JSONExporter()
@@ -138,16 +146,15 @@ async def scraper_main():
         console.print(f'[red]JSONDecodeError: URLs failed. Re-run program.[/red]')
         console.print(f'[bold red]If problem continues, please submit an issue on GitHub at:[/bold red]\n[bold blue][link]https://github.com/yousefabuz17/FileCraftsman/issues/new[/bold blue][/link]')
 
-#Add timeout exception
+#TODO: Add timeout exception --  in-progress (not working yet)
 
 if __name__ == '__main__':
     try:
-        console = Console()
         asyncio.run(scraper_main())
     except KeyboardInterrupt:
         console.print(f'\n[bold red]Keyboard Interrupt: Exiting the program[/bold red]')
         logging.info(f"{CODE['Font Color']['Red']}{CODE['Text Style']['Bold']}FILE-TERMINATED{CODE['Reset']}")
-        json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json')
+        json_data_file = (Path.cwd() / 'FileCraftsman' / 'full_data.json') or (Path.cwd() / 'full_data.json')
         json_temp_dir = (Path.cwd() / 'TempJSONFiles')
         if json_data_file.exists() and json_temp_dir.exists():
             json_data_file.unlink()
