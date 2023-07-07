@@ -10,6 +10,7 @@ class Craftsman:
         console.print('[bold green]\n\tCRAFTSMAN ACTIVATED[/bold green]')
         self.current_dir = Path.cwd() / 'FileCraftsman' if Path.cwd().name=='Projects' else Path.cwd()
         self.data = self.get_data()
+        self.all_tags = ['tag_names', 'tag_text', 'tag_attr', 'tag_contents', 'random_bytes']
 
     def create_dirs(self):
         os.makedirs(self.current_dir / 'RandomFolder', exist_ok=True)
@@ -26,25 +27,18 @@ class Craftsman:
             os.makedirs(sub_folder_path, exist_ok=True)
             file_path = sub_folder_path / f'random_file{idx}.txt'
             with open(file_path, 'w') as file:
-                file.write(
-                        f"{json_item['tag_names']}\n",
-                        f"{json_item['tag_text']}\n",
-                        f"{json_item['tag_text']}\n",
-                        f"{json_item['random_bytes']}\n",
-                        f"{json_item['tag_contents']}\n")
-
-    def get_data(self):
-        json_file = self.current_dir / 'full_data.json'
-        with open(json_file, 'r') as file:
-            data = json.load(file)
-        return data
+                for types in self.all_tags:
+                    file.write(f"{json_item[types]}\n")
+    
+    get_data = lambda self: json.load(open(self.current_dir / 'full_data.json', 'r'))
 
     def complete(self):
         total_files = [list(map(len, [subfolder,files])) for _, subfolder, files in os.walk(self.current_dir / 'RandomFolder')]
-        sub_folders_len = sum([i[0] for i in total_files])
-        file_count = sum([i[-1] for i in total_files])
+        sub_folders_len = [i[0] for i in total_files]
+        file_count = [i[-1] for i in total_files]
+        creation_size = list(map(sum, [sub_folders_len, file_count]))
         console.print(
-                    f"Created {file_count} files and {sub_folders_len} sub-folders",
+                    f"Created {creation_size[0]} directories and {creation_size[-1]} files.",
                     '[bold red]\n\tCRAFTSMAN COMPLETE[/bold red]',
                     sep='\n')
 
