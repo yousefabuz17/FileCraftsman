@@ -44,7 +44,7 @@ The File Craftsman project utilizes various open-source libraries and resources.
     - Implementing Timeout Error Handling: Addressing the issue of program freezes or crashes when a URL is unresponsive or times out.
     - Documentation and Comments: Adding inline comments to enhance code readability and maintainability. Updating docstrings for classes, methods, and functions to provide clear explanations and usage examples. Reviewing and enhancing the overall project documentation to provide comprehensive and user-friendly instructions.
 
-- **FileCraftsman: Started**
+- **FileCraftsman: Completed (Needs Exceptions)**
     - Craftsman Class: Creating the Craftsman class to encapsulate file generation and manipulation functionalities.
     - Craftsman Methods: Implementing various methods within the Craftsman class to support random file generation, directory creation, and other file operations.
     - Craftsman Tests: Writing comprehensive tests to ensure the functionality and reliability of the Craftsman class.
