@@ -50,8 +50,8 @@ class AsyncWebScraper:
             'tag_text': list(filter(lambda tag_text: tag_text, [tag.text for tag in all_tags if tag.text])),
             'tag_contents': [
                 list(filter(lambda content: content, [sub_tag.text for sub_tag in tag.contents if sub_tag.text]))
-                for tag in all_tags
-            ]
+                for tag in all_tags if tag.contents],
+            'random_bytes': os.urandom(1024**2).hex()
         }
         return tag_info
 
