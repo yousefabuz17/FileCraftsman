@@ -122,7 +122,7 @@ class JSONExporter:
         json_byte_size, json_gb_size = full_path.stat().st_size, full_path.stat().st_size*1e-9
         console.print(
                         f"JSON files merged successfully!",
-                        f"[bold green][SUCCESS][/bold green] {self.json_file_name}.json saved at:",
+                        f"[bold green][SUCCESS][/bold green] {self.json_file_name}.json saved to:",
                         f"[yellow]{full_path}[/yellow]",
                         f"JSON Line/Byte Size: [bold blue]({self.get_line_count(self.json_file_name):,} ~ {json_byte_size:,} bytes ~ {json_gb_size:.2}GB)[/bold blue]",
                         "[u i]Note: More links parsed = More data = Larger file size & longer parsing time[/u i]",
@@ -134,7 +134,7 @@ class JSONExporter:
 async def scraper_main():
     try:
         logging.basicConfig(level=logging.INFO)
-        web_scraper = AsyncWebScraper(limit=5)
+        web_scraper = AsyncWebScraper(limit=10)
         parsed_data = await web_scraper.parse_urls()
         if parsed_data:
             json_exporter = JSONExporter()
